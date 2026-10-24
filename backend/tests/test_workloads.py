@@ -137,7 +137,7 @@ def test_sinusoid_rate_function_shape() -> None:
 )
 def test_invalid_workloads_rejected(payload: dict[str, object]) -> None:
     with pytest.raises(ValidationError):
-        TypeAdapter[WorkloadConfig](WorkloadConfig).validate_python(payload)  # type: ignore[arg-type]
+        TypeAdapter[WorkloadConfig](WorkloadConfig).validate_python(payload)  # type: ignore[arg-type, unused-ignore]
 
 
 def test_trace_validates_ordering() -> None:
