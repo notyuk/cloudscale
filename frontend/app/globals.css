@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f7f7f8;
+  --surface: #ffffff;
+  --surface-2: #f1f2f4;
+  --border: #e3e5e8;
+  --fg: #17191c;
+  --muted: #6b7079;
+  --accent: #2458d6;
+  --accent-fg: #ffffff;
+  --danger: #c2362b;
+  --danger-bg: #fdf0ef;
+  --grid: #e6e8eb;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --reference: #8a8f98;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0d0f12;
+  --surface: #14171c;
+  --surface-2: #1b1f25;
+  --border: #272c34;
+  --fg: #e6e8eb;
+  --muted: #9298a2;
+  --accent: #6d97f5;
+  --accent-fg: #0d0f12;
+  --danger: #f08378;
+  --danger-bg: #2a1614;
+  --grid: #232831;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --reference: #6b7079;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
