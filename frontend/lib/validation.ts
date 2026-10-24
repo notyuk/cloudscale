@@ -89,8 +89,8 @@ export function validateScenario(s: Scenario): Errors {
       checkRanges(
         [
           ["workload.peak_multiplier", w.peak_multiplier, 1, 100, true],
-          ["workload.mean_burst_s", w.mean_burst_s, 0, 1e9, true],
-          ["workload.mean_gap_s", w.mean_gap_s, 0, 1e9, true],
+          ["workload.mean_burst_s", w.mean_burst_s, 1, 86_400],
+          ["workload.mean_gap_s", w.mean_gap_s, 1, 86_400],
         ],
         errors,
       );

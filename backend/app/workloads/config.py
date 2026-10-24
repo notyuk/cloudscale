@@ -82,8 +82,8 @@ class BurstyWorkload(_WorkloadBase):
     pattern: Literal["bursty"] = "bursty"
     base_rate: float = Field(10.0, gt=0, le=MAX_RATE_RPS)
     peak_multiplier: float = Field(5.0, gt=1, le=100)
-    mean_burst_s: float = Field(60.0, gt=0)
-    mean_gap_s: float = Field(300.0, gt=0)
+    mean_burst_s: float = Field(60.0, ge=1, le=86_400)
+    mean_gap_s: float = Field(300.0, ge=1, le=86_400)
 
     @model_validator(mode="after")
     def _peak_rate_bounded(self) -> BurstyWorkload:

@@ -155,7 +155,7 @@ stats.
 |---|---|---|
 | 422 | `validation_error` | schema/range/consistency checks (e.g. `min_replicas > max_replicas`) |
 | 422 | `invalid_configuration` | valid parts that don't fit together (fixed replicas outside bounds) |
-| 422 | `limit_exceeded` | expected requests > 1M per run or 2.5M per comparison (checked before generating anything) |
+| 422 | `limit_exceeded` | expected requests > 1M per run or 2.5M per comparison, or peak rate × duration > 5M (checked before generating anything) |
 | 422 | `simulation_too_expensive` | the 30 s wall-clock budget was hit |
 | 413 | `payload_too_large` | body > 64 KiB (checked even without `Content-Length`) |
 | 503 | `server_busy` | all simulation slots busy; includes `Retry-After` |

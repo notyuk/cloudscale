@@ -13,6 +13,7 @@ from app.workloads.config import (
 
 MAX_DURATION_S = 86_400.0
 MAX_SERIES_POINTS = 2_000
+MAX_CONTROL_TICKS = 50_000
 
 
 class ClusterConfig(BaseModel):
@@ -87,6 +88,10 @@ class ScenarioConfig(BaseModel):
     def _consistent(self) -> ScenarioConfig:
         if self.control_interval_s > self.duration_s:
             raise ValueError("control_interval_s must not exceed duration_s")
+        if self.duration_s / self.control_interval_s > MAX_CONTROL_TICKS:
+            raise ValueError(
+                f"duration_s / control_interval_s must not exceed {MAX_CONTROL_TICKS} ticks"
+            )
         if self.duration_s / self.metrics_interval_s > MAX_SERIES_POINTS:
             raise ValueError(
                 f"duration_s / metrics_interval_s must not exceed {MAX_SERIES_POINTS} buckets"

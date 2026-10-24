@@ -263,3 +263,43 @@ def test_simulation_core_does_not_import_web_framework() -> None:
                     assert not name.startswith(("fastapi", "starlette", "app.api")), (
                         f"{path.name} imports {name}"
                     )
+
+
+def test_short_extreme_spike_rejected_before_generation(client: TestClient) -> None:
+    # Few expected requests, but thinning would draw peak_rate * duration candidates.
+    scenario = {
+        "duration_s": 86_400,
+        "metrics_interval_s": 60,
+        "workload": {
+            "pattern": "spike",
+            "base_rate": 0.1,
+            "spike_rate": 5_000,
+            "spike_start_s": 0,
+            "spike_duration_s": 1,
+        },
+    }
+    response = client.post("/simulations/run", json={"scenario": scenario})
+    assert response.status_code == 422
+    assert response.json()["error"] == "limit_exceeded"
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    [
+        {"workload": {"pattern": "bursty", "mean_burst_s": 1e-6}},
+        {"duration_s": 86_400, "metrics_interval_s": 60, "control_interval_s": 0.01},
+    ],
+)
+def test_pathological_timing_rejected(client: TestClient, scenario: dict[str, Any]) -> None:
+    response = client.post("/simulations/run", json={"scenario": scenario})
+    assert response.status_code == 422
+
+
+def test_nan_and_infinity_rejected(client: TestClient) -> None:
+    # Python's json module accepts these literals, so they must be caught by validation.
+    for literal in ["NaN", "Infinity"]:
+        body = '{"scenario": {"duration_s": ' + literal + "}}"
+        response = client.post(
+            "/simulations/run", content=body, headers={"content-type": "application/json"}
+        )
+        assert response.status_code == 422, literal

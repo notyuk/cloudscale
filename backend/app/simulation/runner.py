@@ -24,6 +24,8 @@ class RunLimits:
     max_expected_requests: int = 1_000_000
     max_total_expected_requests: int = 2_500_000
     max_peak_rate_rps: float = 5_000.0
+    # thinning draws peak_rate * duration candidates before discarding most of them
+    max_candidate_arrivals: int = 5_000_000
     wall_time_budget_s: float | None = 30.0
 
 
@@ -94,6 +96,12 @@ def check_limits(scenario: ScenarioConfig, n_strategies: int, limits: RunLimits)
     if peak_rate(scenario.workload) > limits.max_peak_rate_rps:
         raise SimulationLimitError(
             f"peak arrival rate exceeds {limits.max_peak_rate_rps:g} requests/s"
+        )
+    candidates = peak_rate(scenario.workload) * scenario.duration_s
+    if candidates > limits.max_candidate_arrivals:
+        raise SimulationLimitError(
+            f"peak rate x duration is {candidates:,.0f}; the limit is "
+            f"{limits.max_candidate_arrivals:,}. Lower the peak rate or the duration."
         )
     if expected > limits.max_expected_requests:
         raise SimulationLimitError(
