@@ -1,14 +1,4 @@
-"""Seeded workload generation.
-
-A workload trace is a pair of equally sized arrays: sorted arrival times and
-per-request work. Generation is fully vectorised with NumPy and uses *local*
-``numpy.random.Generator`` instances derived from an explicit seed, so the same
-configuration and seed always yield bit-identical traces.
-
-Arrival times and work use independent child streams of one ``SeedSequence``.
-Changing the service-time distribution therefore never perturbs the arrival
-times, which keeps comparisons between scenarios meaningful.
-"""
+"""Seeded workload trace generation."""
 
 from __future__ import annotations
 

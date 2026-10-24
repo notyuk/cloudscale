@@ -1,4 +1,4 @@
-"""Result schemas for metrics. Units are in field names (``_s`` seconds, ``_rps`` per second)."""
+"""Result schemas for metrics."""
 
 from __future__ import annotations
 

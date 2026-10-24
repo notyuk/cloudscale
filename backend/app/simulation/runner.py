@@ -1,12 +1,4 @@
-"""Experiment execution: run one or more strategies against a scenario.
-
-This is the boundary used by both the HTTP API and the offline experiment
-suite. It owns three responsibilities:
-
-1. rejecting configurations that would be too expensive to simulate;
-2. generating the workload trace *once* so every strategy sees identical input;
-3. turning raw engine output into a versioned result document.
-"""
+"""Runs strategies against a scenario and builds result documents."""
 
 from __future__ import annotations
 

@@ -1,24 +1,4 @@
-"""Request and server lifecycles.
-
-Request lifecycle (every request ends in exactly one terminal state)::
-
-    PENDING ──arrive──▶ QUEUED ──dispatch──▶ IN_SERVICE ──finish──▶ COMPLETED
-       │                  │                     │
-       └──queue full──▶ REJECTED               └──sim ends──▶ UNFINISHED
-                          └──────sim ends────────────────────▶ UNFINISHED
-
-A request that finds a free slot still passes through QUEUED, with zero wait.
-
-Server lifecycle::
-
-    STARTING ──ready──▶ ACTIVE ──scale down (busy)──▶ DRAINING ──last job done──▶ TERMINATED
-       │                  │  ▲                            │
-       │                  │  └──────scale up (reuse)──────┘
-       │                  └──scale down (idle)──────────────────────────────────▶ TERMINATED
-       └──scale down (cancel launch)────────────────────────────────────────────▶ TERMINATED
-
-Only ACTIVE servers receive new work. DRAINING servers finish what they hold.
-"""
+"""Request and server lifecycle states and allowed transitions."""
 
 from __future__ import annotations
 

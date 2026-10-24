@@ -1,16 +1,7 @@
-"""The autoscaling strategy interface.
+"""Strategy interface.
 
-A strategy is a small, stateful controller. Once per control interval the
-engine hands it an :class:`Observation` built *only* from events that have
-already happened, and the strategy answers with a desired replica count.
-
-Strategies never see the workload trace, the event queue, or any request that
-has not yet arrived: the engine constructs observations from its own past-only
-accumulators, so future-data leakage is prevented by construction rather than
-by convention. (``tests/test_strategies.py`` verifies this property.)
-
-The engine, not the strategy, enforces min/max replica bounds and provisioning
-delays, so a buggy strategy cannot violate the cluster's physical constraints.
+Strategies only receive an Observation built from past events, so they can't
+see the workload trace. Replica bounds are enforced by the engine.
 """
 
 from __future__ import annotations

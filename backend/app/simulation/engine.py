@@ -1,36 +1,4 @@
-"""Deterministic discrete-event simulation engine.
-
-Execution model
----------------
-* One global FIFO queue in front of a pool of identical servers (an idealised
-  load balancer). Each server has ``slots_per_server`` independent slots; a
-  slot processes one request at a time, taking ``work / server_speed`` seconds.
-* Dispatch is work-conserving and bin-packing: whenever a slot is free and the
-  queue is non-empty, the head of the queue goes to the lowest-numbered ACTIVE
-  server with a free slot. Packing keeps high-numbered servers idle so that
-  scale-down can usually terminate them without draining.
-* The simulation covers the half-open interval ``[0, duration)``. Events at or
-  after ``duration`` are not processed; requests still queued or in service at
-  that point become UNFINISHED.
-
-Event ordering
---------------
-Events are ordered by ``(time, kind, sequence)``. At equal timestamps the kind
-priority is SAMPLE < COMPLETION < SERVER_READY < ARRIVAL < CONTROL, so:
-
-1. metric buckets close *before* anything at their boundary happens;
-2. capacity freed by completions and new servers is visible to arrivals at the
-   same instant;
-3. the controller observes every arrival up to and including its tick time.
-
-``sequence`` is a monotonically increasing insertion counter, which makes ties
-within a kind deterministic (FIFO). Arrivals come from a pre-sorted array and
-are merged with the heap rather than pushed into it, which halves heap traffic.
-
-Complexity: O((N + E) log H) for N requests, E other events, and heap size H
-(bounded by in-flight requests plus pending server/timer events). Memory is
-O(N) for the per-request arrays.
-"""
+"""Discrete-event simulation engine. See docs/simulation-model.md for the semantics."""
 
 from __future__ import annotations
 
@@ -56,7 +24,6 @@ from app.simulation.entities import (
 from app.strategies.base import Observation, ScalingStrategy
 from app.workloads.generators import WorkloadTrace
 
-#: Smoothing factor for the per-interval service-time estimate shown to strategies.
 SERVICE_ESTIMATE_ALPHA = 0.3
 _BUDGET_CHECK_EVERY = 8_192
 
@@ -172,7 +139,7 @@ class SimulationEngine:
         self._scaling_events: list[ScalingEvent] = []
         self._decisions: list[tuple[float, int, str]] = []
 
-        # Per-control-interval accumulators (reset at each control tick).
+        # reset at every control tick
         self._ctl_integrals_at_last_tick = Integrals()
         self._ctl_last_time = 0.0
         self._ctl_arrivals = 0
@@ -181,8 +148,6 @@ class SimulationEngine:
         self._ctl_service_sum = 0.0
         self._service_estimate: float | None = None
         self._events = 0
-
-    # ------------------------------------------------------------------ helpers
 
     def _push(self, t: float, kind: EventKind, a: int = 0, b: int = 0) -> None:
         heapq.heappush(self._heap, (t, int(kind), self._seq, a, b))
@@ -210,8 +175,6 @@ class SimulationEngine:
             ) * dt
             acc.paid_servers += (self._n_active + self._n_starting + self._n_draining) * dt
         self.now = t
-
-    # --------------------------------------------------------------- servers
 
     def _new_server(self, state: ServerState, initial: bool = False) -> Server:
         server = Server(id=len(self._servers), state=state, launched_at=self.now, initial=initial)
@@ -273,8 +236,6 @@ class SimulationEngine:
         self._busy_active += server.in_flight
         self._mark_free(server)
 
-    # -------------------------------------------------------------- dispatch
-
     def _dispatch(self) -> None:
         slots = self.cluster.slots_per_server
         speed = self.cluster.server_speed
@@ -292,8 +253,6 @@ class SimulationEngine:
                 heapq.heappop(self._free_heap)
                 server.in_free_heap = False
             self._push(self.now + self._work[rid] / speed, EventKind.COMPLETION, rid, server.id)
-
-    # ---------------------------------------------------------------- events
 
     def _on_arrival(self, rid: int) -> None:
         self._ctl_arrivals += 1
@@ -387,7 +346,7 @@ class SimulationEngine:
         launched = reactivated = cancelled = terminated = drained = 0
         if target > committed:
             need = target - committed
-            # Reuse warm draining servers first: they are already paid for and ready.
+            # reuse draining servers before launching new ones
             for server in sorted(
                 (s for s in self._live.values() if s.state is ServerState.DRAINING),
                 key=lambda s: s.id,
@@ -403,7 +362,7 @@ class SimulationEngine:
             self._dispatch()
         else:
             excess = committed - target
-            # 1. Cancel launches that have not finished booting (newest first).
+            # cancel booting servers first
             for server in sorted(
                 (s for s in self._live.values() if s.state is ServerState.STARTING),
                 key=lambda s: -s.id,
@@ -413,8 +372,7 @@ class SimulationEngine:
                 self._terminate(server)
                 cancelled += 1
                 excess -= 1
-            # 2. Remove active servers, least loaded first; idle ones stop immediately,
-            #    busy ones drain (no new work, finish in-flight requests, then stop).
+            # then idle servers stop, busy ones drain
             for server in sorted(
                 (s for s in self._live.values() if s.state is ServerState.ACTIVE),
                 key=lambda s: (s.in_flight, -s.id),
@@ -455,8 +413,6 @@ class SimulationEngine:
             )
         )
 
-    # ------------------------------------------------------------ invariants
-
     def _verify(self) -> None:
         slots = self.cluster.slots_per_server
         live = list(self._live.values())
@@ -494,8 +450,6 @@ class SimulationEngine:
             self.cluster.min_replicas <= committed <= self.cluster.max_replicas
         ):
             raise InvariantViolationError(f"committed replicas {committed} out of bounds")
-
-    # ------------------------------------------------------------------ run
 
     def run(self) -> RawRun:
         cfg = self.scenario

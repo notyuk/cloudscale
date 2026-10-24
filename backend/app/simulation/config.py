@@ -1,11 +1,4 @@
-"""Scenario configuration shared by every strategy in a run or comparison.
-
-A *scenario* fixes everything except the scaling strategy: workload, seed,
-cluster limits, SLA and prices. Comparisons run several strategies against one
-scenario, which is how fairness is enforced (identical traces, limits, costs).
-
-Units: time in seconds, rates in requests/second, prices per server-hour.
-"""
+"""Scenario configuration. Time in seconds, prices per server-hour."""
 
 from __future__ import annotations
 

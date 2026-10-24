@@ -1,16 +1,4 @@
-"""Derive summary metrics and time series from a raw engine run.
-
-Conventions (see ``docs/simulation-model.md`` for the full definitions):
-
-* Latency = completion time - arrival time, computed over COMPLETED requests.
-  Because that alone hides a growing backlog, the summary also reports how many
-  requests were unfinished and *lower-bound* percentiles that include the
-  elapsed age of every unfinished request.
-* Time-weighted means divide an integral over simulated time by the elapsed
-  simulated time, never by the number of events.
-* Percentiles use NumPy's default linear interpolation.
-* Any metric with an empty population is ``None`` rather than 0 or NaN.
-"""
+"""Summary metrics and time series derived from a raw run."""
 
 from __future__ import annotations
 

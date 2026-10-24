@@ -1,19 +1,4 @@
-"""Strategy B: reactive, utilisation-based autoscaling.
-
-Trigger and sizing are deliberately separated:
-
-* **Trigger** — time-weighted utilisation over a sliding observation window
-  must leave the hysteresis band ``[lower_threshold, upper_threshold]``, and the
-  relevant cooldown must have elapsed.
-* **Sizing** — target tracking, as in the Kubernetes HPA: provision enough
-  slots that the observed demand would run at ``target_utilisation``. Demand is
-  the window's average busy slots plus the slots needed to clear the current
-  queue within ``backlog_drain_s`` (utilisation alone saturates at 100% and
-  cannot express how overloaded the cluster is).
-
-Scale-down additionally requires an empty queue and no servers still booting,
-and removes at most ``max_step_down`` replicas per decision.
-"""
+"""Reactive autoscaler: utilisation thresholds trigger, target tracking sizes."""
 
 from __future__ import annotations
 

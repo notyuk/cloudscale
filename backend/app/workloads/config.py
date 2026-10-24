@@ -1,9 +1,4 @@
-"""Validated workload configuration models.
-
-Every workload pattern is described by an arrival-rate function lambda(t) in
-requests per second. Patterns are a discriminated union on ``pattern`` so the
-API, the experiment suite and the frontend all share one schema.
-"""
+"""Workload configuration models."""
 
 from __future__ import annotations
 

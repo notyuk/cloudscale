@@ -1,24 +1,4 @@
-"""Strategy C: predictive autoscaling with Holt's linear trend method.
-
-Each tick the controller observes the arrival rate of the interval that just
-ended and updates a level/trend estimate (double exponential smoothing)::
-
-    level_t = alpha * r_t + (1 - alpha) * (level_{t-1} + trend_{t-1})
-    trend_t = beta * (level_t - level_{t-1}) + (1 - beta) * trend_{t-1}
-    forecast(h) = max(0, level_t + trend_t * h / interval)
-
-The forecast horizon defaults to the provisioning delay plus one control
-interval: capacity requested now becomes usable only after the delay, so it
-should be sized for the load expected *then*.
-
-Forecast demand in slots follows Little's law (``rate * mean service time``).
-Capacity is sized so that demand runs at ``target_utilisation``. With
-``reactive_floor`` enabled the controller also never sizes below what the
-*current* observed demand needs, which bounds the damage of an under-forecast.
-
-Only past arrivals reach the model: ``obs.arrivals`` counts requests whose
-arrival time is at or before ``obs.time``.
-"""
+"""Predictive autoscaler using Holt's linear trend forecast of arrival rate."""
 
 from __future__ import annotations
 
