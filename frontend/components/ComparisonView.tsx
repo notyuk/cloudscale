@@ -271,6 +271,7 @@ export function ComparisonView({ data }: { data: ComparisonResult }) {
             xKey="strategy"
             yLabel="%"
             series={[{ key: "compliant", label: "Compliant", color: SERIES_COLORS[0] }]}
+            barColors={results.map((_, i) => SERIES_COLORS[i])}
           />
         </Card>
         <Card title="Cumulative compute cost">

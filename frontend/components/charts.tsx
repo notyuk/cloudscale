@@ -5,6 +5,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ComposedChart,
   Label,
   Legend,
@@ -169,6 +170,7 @@ export function BarsChart({
   xKey,
   height = 220,
   digits = 1,
+  barColors,
 }: {
   data: Record<string, number | string | null>[];
   series: SeriesSpec[];
@@ -176,6 +178,8 @@ export function BarsChart({
   xKey: string;
   height?: number;
   digits?: number;
+  // one colour per bar (e.g. per strategy) instead of per series
+  barColors?: string[];
 }) {
   return (
     <div style={{ height }} className="w-full">
@@ -213,7 +217,11 @@ export function BarsChart({
               radius={[4, 4, 0, 0]}
               stackId={s.stackId}
               isAnimationActive={false}
-            />
+            >
+              {barColors?.map((color, i) => (
+                <Cell key={i} fill={color} />
+              ))}
+            </Bar>
           ))}
         </BarChart>
       </ResponsiveContainer>

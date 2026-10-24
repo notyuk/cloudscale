@@ -21,8 +21,8 @@ RESULT_SCHEMA_VERSION = "1.0"
 class RunLimits:
     """Guards against configurations that would exhaust CPU or memory."""
 
-    max_expected_requests: int = 250_000
-    max_total_expected_requests: int = 750_000
+    max_expected_requests: int = 1_000_000
+    max_total_expected_requests: int = 2_500_000
     max_peak_rate_rps: float = 5_000.0
     wall_time_budget_s: float | None = 30.0
 
