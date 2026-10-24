@@ -34,6 +34,9 @@ include = ["app*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
+filterwarnings = [
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
 markers = [
     "slow: long-running tests (deselect with -m 'not slow')",
 ]
