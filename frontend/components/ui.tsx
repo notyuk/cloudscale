@@ -186,6 +186,25 @@ export function ErrorBanner({ error, onRetry }: { error: ApiError; onRetry?: () 
   );
 }
 
+// Invalid fields can sit far below the Run button, so say how many there are and
+// offer a jump to the first one rather than just disabling the button.
+export function InvalidNotice({ count }: { count: number }) {
+  if (count === 0) return null;
+  const showFirst = () => {
+    const field = document.querySelector<HTMLElement>('[aria-invalid="true"]');
+    field?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    field?.focus({ preventScroll: true });
+  };
+  return (
+    <p className="text-xs text-danger">
+      {count === 1 ? "1 field needs" : `${count} fields need`} fixing before you can run.{" "}
+      <button type="button" className="underline underline-offset-2" onClick={showFirst}>
+        Show first
+      </button>
+    </p>
+  );
+}
+
 export function Spinner({ label }: { label: string }) {
   return (
     <div role="status" className="flex items-center gap-3 text-sm text-muted">

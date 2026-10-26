@@ -6,7 +6,7 @@ import { ConfigImport } from "@/components/ConfigImport";
 import { ExportMenu } from "@/components/ExportMenu";
 import { RunAnalysis } from "@/components/RunAnalysis";
 import { StrategyForm } from "@/components/StrategyForm";
-import { Button, Card, ErrorBanner, SelectField, Spinner } from "@/components/ui";
+import { Button, Card, ErrorBanner, InvalidNotice, SelectField, Spinner } from "@/components/ui";
 import { Workbench } from "@/components/Workbench";
 import { useSimulation } from "@/hooks/useSimulation";
 import { defaultStrategy, STRATEGY_LABELS } from "@/lib/presets";
@@ -21,7 +21,8 @@ export default function SimulatePage() {
   const current = strategy ?? (defaults ? defaultStrategy("reactive", defaults.strategies) : null);
   const scenarioErrors = scenario ? validateScenario(scenario) : {};
   const strategyErrors = scenario && current ? validateStrategy(current, scenario) : {};
-  const invalid = Object.keys(scenarioErrors).length + Object.keys(strategyErrors).length > 0;
+  const errorCount = Object.keys(scenarioErrors).length + Object.keys(strategyErrors).length;
+  const invalid = errorCount > 0;
   const loading = state.status === "loading";
 
   return (
@@ -81,7 +82,7 @@ export default function SimulatePage() {
                 </Button>
                 {loading && <Button onClick={cancel}>Cancel</Button>}
               </div>
-              {invalid && <p className="text-xs text-danger">Fix the highlighted fields to run.</p>}
+              <InvalidNotice count={errorCount} />
             </div>
           </Card>
         )

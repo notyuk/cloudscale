@@ -6,7 +6,7 @@ import { ConfigImport } from "@/components/ConfigImport";
 import { ExportMenu } from "@/components/ExportMenu";
 import { StrategyForm } from "@/components/StrategyForm";
 import { SERIES_COLORS } from "@/components/charts";
-import { Button, Card, ErrorBanner, SelectField, Spinner } from "@/components/ui";
+import { Button, Card, ErrorBanner, InvalidNotice, SelectField, Spinner } from "@/components/ui";
 import { Workbench } from "@/components/Workbench";
 import { useSimulation } from "@/hooks/useSimulation";
 import { defaultStrategy, STRATEGY_LABELS } from "@/lib/presets";
@@ -21,11 +21,10 @@ export default function ComparePage() {
   const strategyErrors = scenario ? strategies.map((s) => validateStrategy(s, scenario)) : [];
   const labels = strategies.map((s) => s.label || s.type);
   const duplicate = new Set(labels).size !== labels.length;
-  const invalid =
-    Object.keys(scenarioErrors).length > 0 ||
-    strategyErrors.some((e) => Object.keys(e).length > 0) ||
-    strategies.length === 0 ||
-    duplicate;
+  const errorCount =
+    Object.keys(scenarioErrors).length +
+    strategyErrors.reduce((n, e) => n + Object.keys(e).length, 0);
+  const invalid = errorCount > 0 || strategies.length === 0 || duplicate;
   const loading = state.status === "loading";
   const max = defaults?.limits.max_compare_strategies ?? 5;
 
@@ -143,6 +142,7 @@ export default function ComparePage() {
                 </Button>
                 {loading && <Button onClick={cancel}>Cancel</Button>}
               </div>
+              <InvalidNotice count={errorCount} />
             </div>
           </Card>
         )

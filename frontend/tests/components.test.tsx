@@ -4,7 +4,7 @@ import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import { ComparisonTable } from "@/components/ComparisonView";
 import { ScenarioForm } from "@/components/ScenarioForm";
-import { ErrorBanner } from "@/components/ui";
+import { ErrorBanner, InvalidNotice } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import type { Scenario } from "@/lib/types";
 import { validateScenario } from "@/lib/validation";
@@ -94,5 +94,27 @@ describe("ErrorBanner", () => {
       />,
     );
     expect(screen.getByRole("alert")).toHaveTextContent("scenario.seed: must be >= 0");
+  });
+});
+
+describe("InvalidNotice", () => {
+  it("renders nothing when every field is valid", () => {
+    const { container } = render(<InvalidNotice count={0} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("counts invalid fields and focuses the first one", async () => {
+    render(
+      <>
+        <FormHarness />
+        <InvalidNotice count={1} />
+      </>,
+    );
+    const maxReplicas = screen.getByLabelText(/Max replicas/);
+    await userEvent.clear(maxReplicas);
+    await userEvent.type(maxReplicas, "0");
+    expect(screen.getByText(/1 field needs fixing/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Show first" }));
+    expect(document.activeElement).toHaveAttribute("aria-invalid", "true");
   });
 });
