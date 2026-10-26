@@ -23,6 +23,27 @@ CloudScale makes the comparison a controlled experiment. Every strategy sees exa
 same seeded request trace, so differences in the results come from the policy alone. The
 benchmarks also show where the "smart" strategy loses.
 
+## Key results
+
+These come from the benchmark suite: 6 workloads × 5 seeds, mean ± 95% CI, 60 s server
+boot time and a 1 s SLA. The full tables are in [Benchmarks](#benchmarks) and
+[REPORT.md](experiments/results/REPORT.md).
+
+- **Smooth, periodic load:** predictive scaling matches a peak-sized static fleet's P95
+  latency (0.612 vs 0.601 s) at 7% lower cost ($0.372 vs $0.400).
+- **A sudden 5-minute spike:** forecasting doesn't help when load changes faster than
+  servers boot.
+
+  | Strategy | P95 latency | Cost |
+  |---|---|---|
+  | Peak-sized fixed fleet | 0.599 s | $0.600 |
+  | Reactive | 57.6 ± 4.9 s | $0.775 |
+  | Predictive | 30.1 ± 12.9 s | $0.913 |
+
+- **Scale-down policy is a trade-off.** Aggressive scale-down cuts reactive's spike cost
+  from $0.775 to $0.200 at identical latency, but on bursty traffic it raises P95 from
+  26 s to 41 s.
+
 ## Features
 
 - **Discrete-event engine**: logical clock, explicit tie-breaking, FIFO queue in front
