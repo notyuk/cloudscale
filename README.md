@@ -11,6 +11,18 @@ dashboard on top.
 > **Scope.** This is a simplified queueing model for comparing control policies. It is
 > not a model of AWS, GCP or any real provider. See [Known limitations](#known-limitations).
 
+## The problem
+
+An autoscaler trades money for latency: provision too little and requests queue past the
+SLA, provision too much and you pay for idle servers. Which policy wins depends on the
+traffic shape and on how long new servers take to boot, and that is hard to judge on real
+infrastructure. Experiments there are slow, cost money and can't be repeated, because
+production traffic never arrives the same way twice.
+
+CloudScale makes the comparison a controlled experiment. Every strategy sees exactly the
+same seeded request trace, so differences in the results come from the policy alone. The
+benchmarks also show where the "smart" strategy loses.
+
 ## Features
 
 - **Discrete-event engine**: logical clock, explicit tie-breaking, FIFO queue in front
@@ -93,25 +105,51 @@ Design decisions are recorded in [docs/adr](docs/adr):
 
 ## Running locally
 
-Requirements: Python 3.12+, Node.js 20.9+ (22 LTS recommended).
+Requirements: Python 3.12, 3.13 or 3.14, and Node.js 20.9+ (22 LTS recommended).
+CI runs on Linux and Windows.
+
+**Backend**, macOS / Linux:
 
 ```bash
-# backend
 cd backend
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt -c constraints.txt
 pip install --no-deps -e .
 uvicorn app.main:app --reload --port 8000
 ```
 
+**Backend**, Windows (PowerShell). Calling the venv's Python directly avoids the
+execution-policy prompt that `Activate.ps1` can trigger:
+
+```powershell
+cd backend
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements-dev.txt -c constraints.txt
+.venv\Scripts\python -m pip install --no-deps -e .
+.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000
+```
+
+**Frontend**, in a second terminal (same on every OS):
+
 ```bash
-# frontend (second terminal)
 cd frontend
 npm ci
 npm run dev        # http://localhost:3000, proxies /api to http://localhost:8000
 ```
 
 Set `CLOUDSCALE_API_URL` to point the frontend at a different backend.
+
+### Try it
+
+1. Open <http://localhost:3000/compare> and press **Run comparison** to compare the
+   default fixed, reactive and predictive strategies on a sinusoidal workload.
+2. Press **Load config** and pick any `experiments/results/<scenario>/config.json`
+   (`spike`, `bursty`, `periodic`, `ramp`, `constant`, `overload`). This loads the exact
+   scenario and strategies from the benchmark suite. Running it reproduces that
+   benchmark's seed-0 numbers in `runs.csv`, and a test checks this for the spike
+   scenario.
+3. Open **Simulator** to run one strategy and inspect it over time: every scaling
+   decision with its reason, server states, queue, utilisation, latency and cost.
 
 ### Docker
 
@@ -209,10 +247,18 @@ needs. It scales down only when the forecast utilisation drops below `lower_thre
 
 ## Benchmarks
 
+Run these from the repository root with the backend's virtualenv (on Windows:
+`backend\.venv\Scripts\python experiments\run.py`):
+
 ```bash
 python experiments/run.py            # full suite: 6 scenarios × 5 seeds, ~40 s
 python experiments/run.py --check    # quick suite; fails if results differ from the committed digest
 ```
+
+A rerun of the full suite on the machine that produced the committed results rewrites
+`experiments/results` byte for byte, charts included, so `git status` stays clean. On
+other machines the numbers match (CI checks the digest on Linux and Windows), but the
+PNGs can differ slightly because of font rendering.
 
 Each scenario writes `config.json` (the exact scenario, strategies and seeds),
 `runs.csv` (one row per seed × strategy), `summary.json` (mean, SD, 95% CI, min, max)
@@ -283,11 +329,11 @@ These were captured from the running app (production build) against the real bac
 ```bash
 cd backend
 ruff check . && ruff format --check . && mypy app tests
-pytest --cov=app                  # ~130 tests, ~30 s
+pytest --cov=app                  # 135 tests, 96% branch coverage
 
 cd ../frontend
 npm run lint && npm run typecheck && npm run format:check
-npm test                          # Vitest + Testing Library
+npm test                          # 24 Vitest + Testing Library tests
 npm run build
 ```
 
@@ -309,8 +355,10 @@ What the backend tests cover:
 - **API**: schemas, determinism over HTTP, structured 4xx/5xx errors, body limits (with
   and without `Content-Length`), busy handling, CORS, and an architectural import guard.
 
-CI (`.github/workflows/ci.yml`) runs all of the above, checks the benchmark digest,
-builds both Docker images, and smoke-tests the stack through the frontend proxy.
+CI (`.github/workflows/ci.yml`) runs all of the above on Linux with Python 3.12. It also
+runs the backend tests and the benchmark digest check on Windows with Python 3.14, so the
+results are shown to be bit-identical across operating systems and Python versions.
+Finally it builds both Docker images and smoke-tests the stack through the frontend proxy.
 
 ## Known limitations
 
@@ -321,8 +369,9 @@ builds both Docker images, and smoke-tests the stack through the frontend proxy.
   interval.
 - The fixed baselines in the benchmarks are sized with knowledge of the workload's
   intended rate, so they are an informed static plan, not a naive one.
-- The engine is pure Python (~1.3 µs/event). Very long or high-rate studies belong in
-  the offline runner, not the API.
+- The engine is pure Python, at about 1.5 µs per event (a 24 h, 830k-request run is
+  about 1.7M events and takes about 2.6 s per strategy on a desktop CPU). Very long or
+  high-rate studies belong in the offline runner, not the API.
 
 ## Future improvements
 
