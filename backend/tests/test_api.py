@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import ast
 import pathlib
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.schemas import HealthResponse
 from app.main import create_app
 
 SMALL_SCENARIO: dict[str, Any] = {
@@ -213,6 +214,27 @@ def test_internal_errors_hide_details(monkeypatch: pytest.MonkeyPatch, client: T
         raise RuntimeError("secret internal state")
 
     monkeypatch.setattr("app.api.routes.compare", boom)
+    response = client.post("/simulations/run", json={})
+    assert response.status_code == 500
+    assert response.json()["error"] == "internal_error"
+    assert "secret" not in response.text
+
+
+def _raise_value_error() -> None:
+    raise ValueError("secret internal state")
+
+
+def _raise_pydantic_error() -> None:
+    # pydantic.ValidationError subclasses ValueError; one raised while building a
+    # *result* is a server bug, not a problem with the request.
+    HealthResponse.model_validate({"status": "secret internal state"})
+
+
+@pytest.mark.parametrize("fail", [_raise_value_error, _raise_pydantic_error])
+def test_internal_value_errors_are_not_reported_as_client_errors(
+    monkeypatch: pytest.MonkeyPatch, client: TestClient, fail: Callable[[], None]
+) -> None:
+    monkeypatch.setattr("app.api.routes.compare", lambda *args, **kwargs: fail())
     response = client.post("/simulations/run", json={})
     assert response.status_code == 500
     assert response.json()["error"] == "internal_error"

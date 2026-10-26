@@ -36,6 +36,10 @@ class SimulationLimitError(ValueError):
     """The configuration is valid but too expensive to simulate under the limits."""
 
 
+class InvalidCombinationError(ValueError):
+    """Individually valid scenario and strategy settings that don't fit together."""
+
+
 class RuntimeInfo(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -84,7 +88,7 @@ def validate_combination(scenario: ScenarioConfig, strategy: StrategyConfig) -> 
     if isinstance(strategy, FixedStrategyConfig) and not (
         cluster.min_replicas <= strategy.replicas <= cluster.max_replicas
     ):
-        raise ValueError(
+        raise InvalidCombinationError(
             f"fixed strategy replicas ({strategy.replicas}) must lie within "
             f"[min_replicas, max_replicas] = [{cluster.min_replicas}, {cluster.max_replicas}]"
         )

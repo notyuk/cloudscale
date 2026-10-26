@@ -11,7 +11,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.schemas import ErrorDetail, ErrorResponse
 from app.simulation.engine import SimulationBudgetExceededError
-from app.simulation.runner import SimulationLimitError
+from app.simulation.runner import InvalidCombinationError, SimulationLimitError
 
 logger = logging.getLogger("cloudscale.api")
 
@@ -65,9 +65,11 @@ def register_error_handlers(app: FastAPI) -> None:
         response.headers["Retry-After"] = "5"
         return response
 
-    @app.exception_handler(ValueError)
-    async def _value(request: Request, exc: ValueError) -> JSONResponse:
-        # Raised for semantically invalid combinations (e.g. fixed replicas out of bounds).
+    # Deliberately not a blanket ValueError handler: pydantic.ValidationError and NumPy
+    # errors are ValueErrors too, and one raised mid-simulation is a server bug that
+    # must not be echoed back to the client as a 422.
+    @app.exception_handler(InvalidCombinationError)
+    async def _combination(request: Request, exc: InvalidCombinationError) -> JSONResponse:
         return _response(status.HTTP_422_UNPROCESSABLE_CONTENT, "invalid_configuration", str(exc))
 
     @app.exception_handler(StarletteHTTPException)
