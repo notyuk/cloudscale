@@ -114,28 +114,27 @@ def run_experiment(exp: Experiment, seeds: list[int]) -> dict[str, Any]:
     }
 
 
+def write_lf(path: Path, text: str) -> None:
+    """Write with LF endings on every OS, so a Windows run doesn't dirty the committed files."""
+    path.write_text(text, encoding="utf-8", newline="\n")
+
+
 def write_outputs(results: list[dict[str, Any]], out: Path, charts: bool) -> None:
     out.mkdir(parents=True, exist_ok=True)
     for res in results:
         folder = out / res["name"]
         folder.mkdir(exist_ok=True)
-        (folder / "config.json").write_text(
-            json.dumps(res["config"], indent=2) + "\n", encoding="utf-8"
-        )
+        write_lf(folder / "config.json", json.dumps(res["config"], indent=2) + "\n")
         with (folder / "runs.csv").open("w", newline="", encoding="utf-8") as fh:
-            writer = csv.DictWriter(fh, fieldnames=list(res["runs"][0]))
+            writer = csv.DictWriter(fh, fieldnames=list(res["runs"][0]), lineterminator="\n")
             writer.writeheader()
             writer.writerows(res["runs"])
-        (folder / "summary.json").write_text(
-            json.dumps(res["summary"], indent=2) + "\n", encoding="utf-8"
-        )
+        write_lf(folder / "summary.json", json.dumps(res["summary"], indent=2) + "\n")
         if charts:
             plot_experiment(res, folder)
     combined = {r["name"]: r["summary"] for r in results}
-    (out / "summary.json").write_text(
-        json.dumps(combined, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
-    (out / "REPORT.md").write_text(render_report(results), encoding="utf-8")
+    write_lf(out / "summary.json", json.dumps(combined, indent=2, sort_keys=True) + "\n")
+    write_lf(out / "REPORT.md", render_report(results))
 
 
 def fmt(stat: dict[str, float] | None, digits: int = 3) -> str:
@@ -224,7 +223,7 @@ def main() -> int:
         return 0
 
     write_outputs(results, out, charts=not args.no_charts)
-    (out / "digest.txt").write_text(current + "\n", encoding="utf-8")
+    write_lf(out / "digest.txt", current + "\n")
     print(f"wrote {out} (digest {current[:12]})")
     return 0
 

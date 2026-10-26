@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "cloudscale"
 version = "1.0.0"
 description = "Deterministic discrete-event simulator for evaluating autoscaling strategies"
-requires-python = ">=3.12,<3.14"
+requires-python = ">=3.12,<3.15"
 license = { text = "MIT" }
 dependencies = [
     "fastapi>=0.115,<1",
@@ -54,6 +54,10 @@ ignore = [
     "PLR0912",
     "PLR0915",
 ]
+
+[tool.ruff.lint.isort]
+# Explicit, so import sorting doesn't depend on the directory ruff is run from.
+known-first-party = ["app", "experiments"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["PLR2004", "S101"]

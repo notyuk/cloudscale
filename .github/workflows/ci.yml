@@ -33,6 +33,26 @@ jobs:
         working-directory: .
         run: python experiments/run.py --check
 
+  # Development happens on Windows. Run the tests there on the newest supported
+  # Python and check the benchmark digest is bit-identical across OSes and versions.
+  backend-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: backend/constraints.txt
+      - run: pip install -r requirements-dev.txt -c constraints.txt && pip install --no-deps -e .
+      - run: pytest
+      - name: Benchmarks reproduce the committed digest
+        working-directory: .
+        run: python experiments/run.py --check
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
