@@ -402,3 +402,7 @@ Finally it builds both Docker images and smoke-tests the stack through the front
 - Additional controllers: PID, seasonal Holt-Winters, MPC over a short horizon.
 - Parameter sweeps (e.g. cooldown × step size) with Pareto-front plots.
 - A compiled event loop (Cython or Rust via PyO3) for larger studies.
+
+## License
+
+[MIT](LICENSE)
