@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import ast
+import csv
+import json
 import pathlib
 from collections.abc import Callable, Iterator
 from typing import Any
@@ -110,6 +112,35 @@ def test_compare_uses_identical_trace(client: TestClient) -> None:
     arrivals = {tuple(r["timeseries"]["arrivals"]) for r in body["results"]}
     assert len(arrivals) == 1
     assert body["requests_generated"] == body["results"][0]["summary"]["requests_total"]
+
+
+def test_api_reproduces_published_benchmark(client: TestClient) -> None:
+    """The committed benchmark config, sent over HTTP, gives the committed seed-0 numbers.
+
+    Ties the API, the offline runner and the published results together: the same
+    file is what the dashboard's "Load config" accepts.
+    """
+    folder = pathlib.Path(__file__).resolve().parents[2] / "experiments" / "results" / "spike"
+    config = json.loads((folder / "config.json").read_text(encoding="utf-8"))
+    with (folder / "runs.csv").open(encoding="utf-8", newline="") as fh:
+        expected = {r["strategy"]: r for r in csv.DictReader(fh) if r["seed"] == "0"}
+
+    response = client.post(
+        "/simulations/compare",
+        json={"scenario": config["scenario"], "strategies": config["strategies"]},
+    )
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert [r["strategy"]["label"] for r in results] == list(expected)
+    for result in results:
+        row = expected[result["strategy"]["label"]]
+        summary = result["summary"]
+        assert summary["requests_total"] == int(row["requests"])
+        assert summary["latency"]["p95_s"] == pytest.approx(float(row["p95_s"]), rel=1e-9)
+        assert summary["sla_violation_pct"] == pytest.approx(
+            float(row["sla_violation_pct"]), rel=1e-9
+        )
+        assert summary["total_cost"] == pytest.approx(float(row["total_cost"]), rel=1e-9)
 
 
 def test_results_are_deterministic_over_http(client: TestClient) -> None:
