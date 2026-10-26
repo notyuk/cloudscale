@@ -1,0 +1,81 @@
+{
+  "scenario": {
+    "duration_s": 600.0,
+    "seed": 0,
+    "workload": {
+      "pattern": "sinusoidal",
+      "base_rate": 30.0,
+      "amplitude": 20.0,
+      "period_s": 300.0,
+      "phase_rad": 0.0
+    },
+    "service": {
+      "distribution": "exponential",
+      "mean_work": 0.2,
+      "cv": 1.0
+    },
+    "cluster": {
+      "slots_per_server": 4,
+      "server_speed": 1.0,
+      "min_replicas": 1,
+      "max_replicas": 20,
+      "initial_replicas": 2,
+      "provisioning_delay_s": 60.0,
+      "max_pending": 10000
+    },
+    "sla": {
+      "latency_threshold_s": 1.0,
+      "penalty_per_violation": 0.0
+    },
+    "cost": {
+      "server_price_per_hour": 0.1
+    },
+    "control_interval_s": 15.0,
+    "metrics_interval_s": 60.0
+  },
+  "seeds": [
+    0,
+    1
+  ],
+  "strategies": [
+    {
+      "label": "fixed-mean",
+      "type": "fixed",
+      "replicas": 2
+    },
+    {
+      "label": "fixed-peak",
+      "type": "fixed",
+      "replicas": 4
+    },
+    {
+      "label": null,
+      "type": "reactive",
+      "upper_threshold": 0.75,
+      "lower_threshold": 0.35,
+      "target_utilisation": 0.6,
+      "observation_window_s": 60.0,
+      "scale_up_cooldown_s": 60.0,
+      "scale_down_cooldown_s": 300.0,
+      "max_step_up": 10,
+      "max_step_down": 2,
+      "backlog_drain_s": 30.0
+    },
+    {
+      "label": null,
+      "type": "predictive",
+      "alpha": 0.5,
+      "beta": 0.2,
+      "horizon_s": null,
+      "target_utilisation": 0.6,
+      "lower_threshold": 0.35,
+      "scale_up_cooldown_s": 30.0,
+      "scale_down_cooldown_s": 300.0,
+      "max_step_up": 10,
+      "max_step_down": 2,
+      "warmup_intervals": 4,
+      "reactive_floor": true,
+      "backlog_drain_s": 30.0
+    }
+  ]
+}
